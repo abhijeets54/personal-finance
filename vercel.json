@@ -1,11 +1,7 @@
 {
   "version": 2,
   "name": "personal-finance-visualizer",
-  "env": {
-    "MONGODB_URI": "@mongodb-uri",
-    "MONGODB_DB": "@mongodb-db",
-    "NODE_ENV": "production"
-  },
+  
   "functions": {
     "src/app/api/**/*.ts": {
       "maxDuration": 30
