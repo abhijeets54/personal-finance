@@ -166,7 +166,7 @@ export function CategoryPieChart() {
                 <div
                   className="w-4 h-4 rounded-full shadow-md flex-shrink-0"
                   style={{
-                    background: `linear-gradient(135deg, ${GRADIENT_COLORS[index % GRADIENT_COLORS.length].start}, ${GRADIENT_COLORS[index % GRADIENT_COLORS.length].end})`
+                    background: `linear-gradient(135deg, ${GRADIENT_COLORS[index % GRADIENT_COLORS.length]?.start || '#3B82F6'}, ${GRADIENT_COLORS[index % GRADIENT_COLORS.length]?.end || '#1D4ED8'})`
                   }}
                 ></div>
                 <div className="flex-1 min-w-0">

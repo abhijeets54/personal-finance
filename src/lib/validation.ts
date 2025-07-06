@@ -1,3 +1,4 @@
+import { z } from 'zod';
 import { TRANSACTION_CATEGORIES } from '@/types';
 
 export interface ValidationError {
@@ -10,7 +11,73 @@ export interface ValidationResult {
   errors: ValidationError[];
 }
 
-// Transaction validation
+// Zod validation schemas
+export const TransactionSchema = z.object({
+  amount: z.number().positive('Amount must be a positive number').max(1000000, 'Amount cannot exceed $1,000,000'),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be in YYYY-MM-DD format').refine((date) => {
+    const d = new Date(date);
+    const now = new Date();
+    const oneYearAgo = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
+    const oneYearFromNow = new Date(now.getFullYear() + 1, now.getMonth(), now.getDate());
+    return d >= oneYearAgo && d <= oneYearFromNow;
+  }, 'Date must be within one year of today'),
+  description: z.string().min(3, 'Description must be at least 3 characters').max(200, 'Description cannot exceed 200 characters').transform(val => val.trim()),
+  category: z.enum(TRANSACTION_CATEGORIES as unknown as [string, ...string[]], {
+    errorMap: () => ({ message: 'Invalid category selected' })
+  }),
+  type: z.enum(['income', 'expense'], {
+    errorMap: () => ({ message: 'Type must be either income or expense' })
+  })
+});
+
+export const BudgetSchema = z.object({
+  category: z.enum(TRANSACTION_CATEGORIES as unknown as [string, ...string[]], {
+    errorMap: () => ({ message: 'Invalid category selected' })
+  }),
+  amount: z.number().positive('Budget amount must be a positive number').max(100000, 'Budget amount cannot exceed $100,000'),
+  month: z.string().regex(/^\d{4}-\d{2}$/, 'Month must be in YYYY-MM format').refine((month) => {
+    const [year, monthNum] = month.split('-').map(Number);
+    const currentYear = new Date().getFullYear();
+    return year && monthNum && year >= currentYear - 1 && year <= currentYear + 2 && monthNum >= 1 && monthNum <= 12;
+  }, 'Month must be within reasonable range')
+});
+
+// Query parameter validation schemas
+export const TransactionQuerySchema = z.object({
+  limit: z.union([z.string(), z.undefined()]).optional().transform((val) => {
+    if (!val) return 20;
+    const num = parseInt(val);
+    if (isNaN(num) || num < 1 || num > 100) {
+      throw new Error('Limit must be between 1 and 100');
+    }
+    return num;
+  })
+});
+
+export const BudgetComparisonQuerySchema = z.object({
+  month: z.string().regex(/^\d{4}-\d{2}$/, 'Month must be in YYYY-MM format')
+});
+
+// Type exports for TypeScript
+export type TransactionInput = z.infer<typeof TransactionSchema>;
+export type BudgetInput = z.infer<typeof BudgetSchema>;
+export type TransactionQuery = z.infer<typeof TransactionQuerySchema>;
+export type BudgetComparisonQuery = z.infer<typeof BudgetComparisonQuerySchema>;
+
+// Validation helper function
+export function validateInput<T>(schema: z.ZodSchema<T>, data: unknown): T {
+  try {
+    return schema.parse(data);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      const messages = error.errors.map(err => `${err.path.join('.')}: ${err.message}`);
+      throw new Error(`Validation failed: ${messages.join(', ')}`);
+    }
+    throw error;
+  }
+}
+
+// Legacy validation function for backward compatibility
 export function validateTransaction(data: {
   amount?: string | number;
   date?: string;
@@ -18,70 +85,23 @@ export function validateTransaction(data: {
   category?: string;
   type?: string;
 }): ValidationResult {
-  const errors: ValidationError[] = [];
-
-  // Amount validation
-  if (!data.amount) {
-    errors.push({ field: 'amount', message: 'Amount is required' });
-  } else {
-    const amount = typeof data.amount === 'string' ? parseFloat(data.amount) : data.amount;
-    if (isNaN(amount) || amount <= 0) {
-      errors.push({ field: 'amount', message: 'Amount must be a positive number' });
+  try {
+    const normalizedData = {
+      ...data,
+      amount: typeof data.amount === 'string' ? parseFloat(data.amount) : data.amount
+    };
+    TransactionSchema.parse(normalizedData);
+    return { isValid: true, errors: [] };
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      const errors = error.errors.map(err => ({
+        field: err.path.join('.'),
+        message: err.message
+      }));
+      return { isValid: false, errors };
     }
-    if (amount > 1000000) {
-      errors.push({ field: 'amount', message: 'Amount cannot exceed $1,000,000' });
-    }
+    return { isValid: false, errors: [{ field: 'general', message: 'Validation failed' }] };
   }
-
-  // Date validation
-  if (!data.date) {
-    errors.push({ field: 'date', message: 'Date is required' });
-  } else {
-    const date = new Date(data.date);
-    const now = new Date();
-    const oneYearAgo = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
-    const oneYearFromNow = new Date(now.getFullYear() + 1, now.getMonth(), now.getDate());
-    
-    if (isNaN(date.getTime())) {
-      errors.push({ field: 'date', message: 'Invalid date format' });
-    } else if (date < oneYearAgo) {
-      errors.push({ field: 'date', message: 'Date cannot be more than 1 year ago' });
-    } else if (date > oneYearFromNow) {
-      errors.push({ field: 'date', message: 'Date cannot be more than 1 year in the future' });
-    }
-  }
-
-  // Description validation
-  if (!data.description) {
-    errors.push({ field: 'description', message: 'Description is required' });
-  } else {
-    const description = data.description.trim();
-    if (description.length < 3) {
-      errors.push({ field: 'description', message: 'Description must be at least 3 characters' });
-    }
-    if (description.length > 200) {
-      errors.push({ field: 'description', message: 'Description cannot exceed 200 characters' });
-    }
-  }
-
-  // Category validation
-  if (!data.category) {
-    errors.push({ field: 'category', message: 'Category is required' });
-  } else if (!TRANSACTION_CATEGORIES.includes(data.category as any)) {
-    errors.push({ field: 'category', message: 'Invalid category selected' });
-  }
-
-  // Type validation
-  if (!data.type) {
-    errors.push({ field: 'type', message: 'Transaction type is required' });
-  } else if (data.type !== 'income' && data.type !== 'expense') {
-    errors.push({ field: 'type', message: 'Type must be either income or expense' });
-  }
-
-  return {
-    isValid: errors.length === 0,
-    errors
-  };
 }
 
 // Budget validation
@@ -122,11 +142,11 @@ export function validateBudget(data: {
     } else {
       const [year, month] = data.month.split('-').map(Number);
       const currentYear = new Date().getFullYear();
-      
-      if (year < currentYear - 1 || year > currentYear + 2) {
+
+      if (year && (year < currentYear - 1 || year > currentYear + 2)) {
         errors.push({ field: 'month', message: 'Year must be within reasonable range' });
       }
-      if (month < 1 || month > 12) {
+      if (month && (month < 1 || month > 12)) {
         errors.push({ field: 'month', message: 'Invalid month' });
       }
     }
@@ -175,7 +195,7 @@ export function formatDate(date: string | Date): string {
 }
 
 export function formatDateForInput(date: Date): string {
-  return date.toISOString().split('T')[0];
+  return date.toISOString().split('T')[0] || '';
 }
 
 // API error handling

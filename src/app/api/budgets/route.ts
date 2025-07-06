@@ -1,21 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { dbService } from '@/lib/db-utils';
+import { createSuccessResponse, withErrorHandling } from '@/lib/api-utils';
 
-export async function GET(request: NextRequest) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const month = searchParams.get('month') || undefined;
+export const GET = withErrorHandling(async (request: NextRequest) => {
+  const { searchParams } = new URL(request.url);
+  const month = searchParams.get('month') || undefined;
 
-    const budgets = await dbService.getBudgets(month);
-    return NextResponse.json({ success: true, data: budgets });
-  } catch (error) {
-    console.error('Error fetching budgets:', error);
-    return NextResponse.json(
-      { success: false, error: 'Failed to fetch budgets' },
-      { status: 500 }
-    );
-  }
-}
+  const budgets = await dbService.getBudgets(month);
+  return createSuccessResponse(budgets);
+});
 
 export async function POST(request: NextRequest) {
   try {
