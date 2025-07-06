@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import { getDatabase } from '@/lib/mongodb';
 
+// Configure timeout for Vercel deployment
+export const maxDuration = 30;
+
 export async function GET() {
   try {
     const db = await getDatabase();

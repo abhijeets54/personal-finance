@@ -49,7 +49,7 @@ MONGODB_DB = personal_finance
 
 ### Issue 4: Function Timeout
 **Symptoms**: API routes return 504 errors
-**Solution**: Already configured with 30-second timeout in `vercel.json`
+**Solution**: Already configured with 30-second timeout using `export const maxDuration = 30` in each API route
 
 ## 📋 Pre-Deployment Checklist
 
