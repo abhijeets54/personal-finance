@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { getDatabase } from '@/lib/mongodb';
 
 export async function GET() {
   try {
@@ -40,12 +41,8 @@ export async function GET() {
       }, { status: 500 });
     }
 
-    // Test MongoDB connection
-    const { MongoClient } = await import('mongodb');
-    const client = new MongoClient(mongoUri);
-
-    await client.connect();
-    const db = client.db(mongoDb);
+    // Test MongoDB connection using improved connection method
+    const db = await getDatabase();
 
     // Test database access
     const collections = await db.listCollections().toArray();
@@ -54,8 +51,6 @@ export async function GET() {
     const transactionCount = collections.find(c => c.name === 'transactions')
       ? await db.collection('transactions').countDocuments()
       : 0;
-
-    await client.close();
 
     return NextResponse.json({
       success: true,

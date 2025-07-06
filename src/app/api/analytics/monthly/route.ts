@@ -1,21 +1,9 @@
 import { NextResponse } from 'next/server';
+import { getDatabase } from '@/lib/mongodb';
 
 export async function GET() {
   try {
-    const { MongoClient } = await import('mongodb');
-    const mongoUri = process.env.MONGODB_URI;
-    const mongoDb = process.env.MONGODB_DB;
-
-    if (!mongoUri || !mongoDb) {
-      return NextResponse.json(
-        { success: false, error: 'Database configuration missing' },
-        { status: 500 }
-      );
-    }
-
-    const client = new MongoClient(mongoUri);
-    await client.connect();
-    const db = client.db(mongoDb);
+    const db = await getDatabase();
     const collection = db.collection('transactions');
 
     // Get monthly expenses data
@@ -64,7 +52,6 @@ export async function GET() {
     ];
 
     const monthlyData = await collection.aggregate(pipeline).toArray();
-    await client.close();
 
     return NextResponse.json({ success: true, data: monthlyData });
   } catch (error) {

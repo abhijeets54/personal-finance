@@ -1,24 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getDatabase } from '@/lib/mongodb';
 
 export async function GET(request: NextRequest) {
   try {
-    const { MongoClient } = await import('mongodb');
-    const mongoUri = process.env.MONGODB_URI;
-    const mongoDb = process.env.MONGODB_DB;
-
-    if (!mongoUri || !mongoDb) {
-      return NextResponse.json(
-        { success: false, error: 'Database configuration missing' },
-        { status: 500 }
-      );
-    }
-
     const { searchParams } = new URL(request.url);
     const limit = searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : 20;
 
-    const client = new MongoClient(mongoUri);
-    await client.connect();
-    const db = client.db(mongoDb);
+    const db = await getDatabase();
     const collection = db.collection('transactions');
 
     const transactions = await collection
@@ -33,8 +21,6 @@ export async function GET(request: NextRequest) {
       _id: t._id.toString()
     }));
 
-    await client.close();
-
     return NextResponse.json({ success: true, data: formattedTransactions });
   } catch (error) {
     console.error('Error fetching transactions:', error);
@@ -47,17 +33,6 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { MongoClient } = await import('mongodb');
-    const mongoUri = process.env.MONGODB_URI;
-    const mongoDb = process.env.MONGODB_DB;
-
-    if (!mongoUri || !mongoDb) {
-      return NextResponse.json(
-        { success: false, error: 'Database configuration missing' },
-        { status: 500 }
-      );
-    }
-
     const body = await request.json();
 
     // Validate required fields
@@ -84,9 +59,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const client = new MongoClient(mongoUri);
-    await client.connect();
-    const db = client.db(mongoDb);
+    const db = await getDatabase();
     const collection = db.collection('transactions');
 
     const now = new Date();
@@ -101,7 +74,6 @@ export async function POST(request: NextRequest) {
     };
 
     const result = await collection.insertOne(transaction);
-    await client.close();
 
     return NextResponse.json({
       success: true,
