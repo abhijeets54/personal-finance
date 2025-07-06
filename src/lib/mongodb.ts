@@ -7,67 +7,30 @@ if (!process.env.MONGODB_URI) {
 const uri = process.env.MONGODB_URI;
 const dbName = process.env.MONGODB_DB || 'personal_finance';
 
-// Connection options optimized for serverless environments
-const options = {
-  maxPoolSize: 1, // Maintain up to 1 socket connection in serverless environment
-  serverSelectionTimeoutMS: 5000, // Keep trying to send operations for 5 seconds
-  socketTimeoutMS: 30000, // Close sockets after 30 seconds of inactivity
-  connectTimeoutMS: 10000, // Give up initial connection after 10 seconds
-  retryWrites: true,
-  retryReads: true,
-  maxIdleTimeMS: 30000, // Close connections after 30 seconds of inactivity
-  minPoolSize: 0, // Minimum number of connections in the connection pool
-};
+let client: MongoClient;
+let clientPromise: Promise<MongoClient>;
 
-// Global is used here to maintain a cached connection across hot reloads
-// in development and to prevent connections growing exponentially in production
-let cached = global as typeof globalThis & {
-  mongo?: {
-    conn: { client: MongoClient; db: Db } | null;
-    promise: Promise<{ client: MongoClient; db: Db }> | null;
+if (process.env.NODE_ENV === 'development') {
+  // In development mode, use a global variable so that the value
+  // is preserved across module reloads caused by HMR (Hot Module Replacement).
+  let globalWithMongo = global as typeof globalThis & {
+    _mongoClientPromise?: Promise<MongoClient>;
   };
-};
 
-if (!cached.mongo) {
-  cached.mongo = { conn: null, promise: null };
-}
-
-async function connectToDatabase(): Promise<{ client: MongoClient; db: Db }> {
-  if (cached.mongo!.conn) {
-    return cached.mongo!.conn;
+  if (!globalWithMongo._mongoClientPromise) {
+    client = new MongoClient(uri);
+    globalWithMongo._mongoClientPromise = client.connect();
   }
-
-  if (!cached.mongo!.promise) {
-    const client = new MongoClient(uri, options);
-
-    cached.mongo!.promise = client.connect().then((client) => {
-      return {
-        client,
-        db: client.db(dbName),
-      };
-    });
-  }
-
-  try {
-    cached.mongo!.conn = await cached.mongo!.promise;
-  } catch (e) {
-    cached.mongo!.promise = null;
-    throw e;
-  }
-
-  return cached.mongo!.conn;
+  clientPromise = globalWithMongo._mongoClientPromise;
+} else {
+  // In production mode, it's best to not use a global variable.
+  client = new MongoClient(uri);
+  clientPromise = client.connect();
 }
 
 export async function getDatabase(): Promise<Db> {
-  const { db } = await connectToDatabase();
-  return db;
+  const client = await clientPromise;
+  return client.db(dbName);
 }
 
-export async function getClient(): Promise<MongoClient> {
-  const { client } = await connectToDatabase();
-  return client;
-}
-
-// For backwards compatibility
-const clientPromise = connectToDatabase().then(({ client }) => client);
 export default clientPromise;

@@ -1,12 +1,21 @@
 import { NextResponse } from 'next/server';
-import { getDatabase } from '@/lib/mongodb';
-
-// Configure timeout for Vercel deployment
-export const maxDuration = 30;
 
 export async function GET() {
   try {
-    const db = await getDatabase();
+    const { MongoClient } = await import('mongodb');
+    const mongoUri = process.env.MONGODB_URI;
+    const mongoDb = process.env.MONGODB_DB;
+
+    if (!mongoUri || !mongoDb) {
+      return NextResponse.json(
+        { success: false, error: 'Database configuration missing' },
+        { status: 500 }
+      );
+    }
+
+    const client = new MongoClient(mongoUri);
+    await client.connect();
+    const db = client.db(mongoDb);
     const collection = db.collection('transactions');
 
     // Get category summary for expenses only
@@ -44,6 +53,8 @@ export async function GET() {
       ...cat,
       percentage: totalAmount > 0 ? (cat.amount / totalAmount) * 100 : 0
     }));
+
+    await client.close();
 
     return NextResponse.json({ success: true, data: categoriesWithPercentage });
   } catch (error) {

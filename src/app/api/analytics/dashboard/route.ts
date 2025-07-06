@@ -1,12 +1,21 @@
 import { NextResponse } from 'next/server';
-import { getDatabase } from '@/lib/mongodb';
-
-// Configure timeout for Vercel deployment
-export const maxDuration = 30;
 
 export async function GET() {
   try {
-    const db = await getDatabase();
+    const { MongoClient } = await import('mongodb');
+    const mongoUri = process.env.MONGODB_URI;
+    const mongoDb = process.env.MONGODB_DB;
+
+    if (!mongoUri || !mongoDb) {
+      return NextResponse.json(
+        { success: false, error: 'Database configuration missing' },
+        { status: 500 }
+      );
+    }
+
+    const client = new MongoClient(mongoUri);
+    await client.connect();
+    const db = client.db(mongoDb);
     const collection = db.collection('transactions');
 
     // Get all transactions
@@ -50,6 +59,8 @@ export async function GET() {
         _id: t._id.toString()
       }));
 
+    await client.close();
+
     const stats = {
       totalIncome,
       totalExpenses,
@@ -63,11 +74,7 @@ export async function GET() {
   } catch (error) {
     console.error('Error fetching dashboard stats:', error);
     return NextResponse.json(
-      {
-        success: false,
-        error: 'Failed to fetch dashboard stats',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      },
+      { success: false, error: 'Failed to fetch dashboard stats' },
       { status: 500 }
     );
   }

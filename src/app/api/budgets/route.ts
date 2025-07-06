@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { dbService } from '@/lib/db-utils';
 
-// Configure timeout for Vercel deployment
-export const maxDuration = 30;
-
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
