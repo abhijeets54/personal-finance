@@ -1,15 +1,41 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { dbService } from '@/lib/db-utils';
-import { Transaction } from '@/types';
 
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const limit = searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : undefined;
-    const skip = searchParams.get('skip') ? parseInt(searchParams.get('skip')!) : undefined;
+    const { MongoClient } = await import('mongodb');
+    const mongoUri = process.env.MONGODB_URI;
+    const mongoDb = process.env.MONGODB_DB;
 
-    const transactions = await dbService.getTransactions(limit, skip);
-    return NextResponse.json({ success: true, data: transactions });
+    if (!mongoUri || !mongoDb) {
+      return NextResponse.json(
+        { success: false, error: 'Database configuration missing' },
+        { status: 500 }
+      );
+    }
+
+    const { searchParams } = new URL(request.url);
+    const limit = searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : 20;
+
+    const client = new MongoClient(mongoUri);
+    await client.connect();
+    const db = client.db(mongoDb);
+    const collection = db.collection('transactions');
+
+    const transactions = await collection
+      .find({})
+      .sort({ date: -1, createdAt: -1 })
+      .limit(limit)
+      .toArray();
+
+    // Convert ObjectId to string
+    const formattedTransactions = transactions.map(t => ({
+      ...t,
+      _id: t._id.toString()
+    }));
+
+    await client.close();
+
+    return NextResponse.json({ success: true, data: formattedTransactions });
   } catch (error) {
     console.error('Error fetching transactions:', error);
     return NextResponse.json(
@@ -21,11 +47,22 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const { MongoClient } = await import('mongodb');
+    const mongoUri = process.env.MONGODB_URI;
+    const mongoDb = process.env.MONGODB_DB;
+
+    if (!mongoUri || !mongoDb) {
+      return NextResponse.json(
+        { success: false, error: 'Database configuration missing' },
+        { status: 500 }
+      );
+    }
+
     const body = await request.json();
-    
+
     // Validate required fields
     const { amount, date, description, category, type } = body;
-    
+
     if (!amount || !date || !description || !category || !type) {
       return NextResponse.json(
         { success: false, error: 'Missing required fields' },
@@ -47,16 +84,29 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const transaction: Omit<Transaction, '_id' | 'createdAt' | 'updatedAt'> = {
+    const client = new MongoClient(mongoUri);
+    await client.connect();
+    const db = client.db(mongoDb);
+    const collection = db.collection('transactions');
+
+    const now = new Date();
+    const transaction = {
       amount: parseFloat(amount.toString()),
       date,
       description: description.trim(),
       category,
-      type
+      type,
+      createdAt: now,
+      updatedAt: now
     };
 
-    const id = await dbService.createTransaction(transaction);
-    return NextResponse.json({ success: true, data: { id } }, { status: 201 });
+    const result = await collection.insertOne(transaction);
+    await client.close();
+
+    return NextResponse.json({
+      success: true,
+      data: { id: result.insertedId.toString() }
+    }, { status: 201 });
   } catch (error) {
     console.error('Error creating transaction:', error);
     return NextResponse.json(

@@ -1,18 +1,70 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { dbService } from '@/lib/db-utils';
+import { NextResponse } from 'next/server';
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
-    const { searchParams } = new URL(request.url);
-    const startDate = searchParams.get('startDate') || undefined;
-    const endDate = searchParams.get('endDate') || undefined;
+    const { MongoClient } = await import('mongodb');
+    const mongoUri = process.env.MONGODB_URI;
+    const mongoDb = process.env.MONGODB_DB;
 
-    const categories = await dbService.getCategorySummary(startDate, endDate);
-    return NextResponse.json({ success: true, data: categories });
+    if (!mongoUri || !mongoDb) {
+      return NextResponse.json(
+        { success: false, error: 'Database configuration missing' },
+        { status: 500 }
+      );
+    }
+
+    const client = new MongoClient(mongoUri);
+    await client.connect();
+    const db = client.db(mongoDb);
+    const collection = db.collection('transactions');
+
+    // Get category summary for expenses only
+    const pipeline = [
+      {
+        $match: {
+          type: 'expense'
+        }
+      },
+      {
+        $group: {
+          _id: "$category",
+          amount: { $sum: "$amount" },
+          count: { $sum: 1 }
+        }
+      },
+      {
+        $project: {
+          category: "$_id",
+          amount: 1,
+          count: 1,
+          _id: 0
+        }
+      },
+      {
+        $sort: { amount: -1 }
+      }
+    ];
+
+    const categoryData = await collection.aggregate(pipeline).toArray();
+
+    // Calculate percentages
+    const totalAmount = categoryData.reduce((sum, cat) => sum + cat.amount, 0);
+    const categoriesWithPercentage = categoryData.map(cat => ({
+      ...cat,
+      percentage: totalAmount > 0 ? (cat.amount / totalAmount) * 100 : 0
+    }));
+
+    await client.close();
+
+    return NextResponse.json({ success: true, data: categoriesWithPercentage });
   } catch (error) {
     console.error('Error fetching category summary:', error);
     return NextResponse.json(
-      { success: false, error: 'Failed to fetch category summary' },
+      {
+        success: false,
+        error: 'Failed to fetch category summary',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     );
   }
