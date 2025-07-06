@@ -1,65 +1,67 @@
 # Personal Finance Visualizer
 
-A beautiful, modern web application for tracking and visualizing personal finances with interactive charts, budgeting tools, and spending insights. Built with Next.js, React, and MongoDB with professional UI/UX design.
+A beautiful, modern web application for tracking and visualizing personal finances with interactive charts, budgeting tools, and spending insights.
 
 ![Personal Finance Visualizer](https://img.shields.io/badge/Next.js-15.3.5-black?style=for-the-badge&logo=next.js)
-![React](https://img.shields.io/badge/React-19-blue?style=for-the-badge&logo=react)
+![React](https://img.shields.io/badge/React-18-blue?style=for-the-badge&logo=react)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?style=for-the-badge&logo=typescript)
 ![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-green?style=for-the-badge&logo=mongodb)
-![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-38B2AC?style=for-the-badge&logo=tailwind-css)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3-38B2AC?style=for-the-badge&logo=tailwind-css)
 
-## 🎯 **Assignment Submission**
+## ✨ Features
 
-**Task**: Personal Finance Visualizer - A simple web application for tracking personal finances.
+### 📊 Dashboard & Analytics
+- **Real-time Dashboard** with summary cards showing total income, expenses, net amount, and transaction count
+- **Monthly Expenses Bar Chart** to visualize spending trends over time
+- **Category-wise Pie Chart** for expense breakdown by category
+- **Budget vs Actual Comparison** charts with monthly budget tracking
 
-**Stack Requirements**: ✅ Next.js, React, shadcn/ui, Recharts, MongoDB
-**Design Requirements**: ✅ Responsive design with error states
-**Currency**: ✅ Indian Rupees (INR) formatting throughout
+### 💰 Transaction Management
+- **Add/Edit/Delete Transactions** with comprehensive form validation
+- **Transaction List View** with search, filter, and pagination
+- **Predefined Categories** for consistent categorization
+- **Income and Expense Tracking** with visual indicators
 
-## ✅ **Required Features Implementation**
+### 🎯 Budget Management
+- **Set Monthly Category Budgets** with easy-to-use forms
+- **Budget Tracking** with visual progress indicators
+- **Budget vs Actual Comparison** with percentage calculations
+- **Budget Alerts** when spending exceeds limits
 
-### **Core Features (100% Complete)**
-- ✅ **Add/Edit/Delete transactions** (amount, date, description)
-- ✅ **Transaction list view** with professional styling
-- ✅ **Monthly expenses bar chart** with interactive tooltips
-- ✅ **Basic form validation** with comprehensive error handling
-- ✅ **Predefined categories** for transactions (15+ categories)
-- ✅ **Category-wise pie chart** with donut design and legend
-- ✅ **Dashboard with summary cards** (total expenses, category breakdown, recent transactions)
-- ✅ **Set monthly category budgets** with easy-to-use interface
-- ✅ **Budget vs actual comparison chart** with performance metrics
-- ✅ **Simple spending insights** with personalized recommendations
+### 🧠 Smart Insights
+- **Spending Pattern Analysis** with personalized recommendations
+- **Financial Health Indicators** including savings rate analysis
+- **Trend Detection** for spending increases/decreases
+- **Category Concentration Warnings** for balanced spending
 
-### **Enhanced Features**
-- 🇮🇳 **INR Currency Support** - All amounts in Indian Rupees
-- 📱 **Fully Responsive Design** - Works on mobile, tablet, and desktop
-- 🎨 **Professional UI/UX** - Modern gradients, shadows, and animations
-- 🔄 **Real-time Updates** - Instant data refresh across components
-- 📊 **Interactive Charts** - Hover effects, tooltips, and smooth transitions
-- ⚡ **Loading States** - Professional loading indicators throughout
-- 🚨 **Error Handling** - Comprehensive error states and user feedback
+### 🎨 Beautiful UI/UX
+- **Modern Design** with gradient backgrounds and smooth animations
+- **Responsive Layout** that works on all devices
+- **Professional Theme** using shadcn/ui components
+- **Interactive Charts** with hover effects and tooltips
+- **Loading States** and error handling throughout
 
-## 🚀 **Tech Stack (As Required)**
+## 🚀 Tech Stack
 
-- **Frontend**: Next.js 15.3.5, React 19, TypeScript 5
-- **UI Components**: shadcn/ui (Radix UI primitives)
-- **Styling**: Tailwind CSS 4 with custom animations
-- **Charts**: Recharts 3.0.2 for data visualization
-- **Database**: MongoDB Atlas with connection pooling
-- **Icons**: Lucide React for consistent iconography
+- **Frontend**: Next.js 15, React 18, TypeScript
+- **Styling**: Tailwind CSS, shadcn/ui components
+- **Charts**: Recharts for data visualization
+- **Database**: MongoDB Atlas
+- **Icons**: Lucide React
 - **Notifications**: Sonner for toast messages
 - **Deployment**: Vercel (production-ready)
 
-## � **Quick Start**
+## 📋 Prerequisites
 
-### **Live Demo**
-🌐 **Deployment URL**: [https://personal-finance-visualizer-psi.vercel.app](https://personal-finance-visualizer-psi.vercel.app)
+- Node.js 18+
+- npm or yarn
+- MongoDB Atlas account (or local MongoDB)
 
-### **Local Development**
+## 🛠️ Installation & Setup
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/personal-finance-visualizer.git
+   git clone <repository-url>
    cd personal-finance-visualizer
    ```
 
@@ -71,7 +73,7 @@ A beautiful, modern web application for tracking and visualizing personal financ
 3. **Environment Setup**
    Create a `.env.local` file in the root directory:
    ```env
-   MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/
+   MONGODB_URI=your_mongodb_connection_string
    MONGODB_DB=personal_finance
    ```
 
@@ -82,12 +84,6 @@ A beautiful, modern web application for tracking and visualizing personal financ
 
 5. **Open your browser**
    Navigate to `http://localhost:3000`
-
-### **Production Build**
-```bash
-npm run build
-npm start
-```
 
 ## 🌐 Environment Variables
 
@@ -200,5 +196,18 @@ The application includes comprehensive testing for:
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-**Built with ❤️ for the Personal Finance Visualizer Assignment**
-*Demonstrating full-stack development skills with modern technologies*
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- [Next.js](https://nextjs.org/) for the amazing React framework
+- [shadcn/ui](https://ui.shadcn.com/) for beautiful UI components
+- [Recharts](https://recharts.org/) for interactive charts
+- [MongoDB](https://www.mongodb.com/) for the database
+- [Vercel](https://vercel.com/) for seamless deployment
+
+---
+
+**Built with ❤️ for better financial management**

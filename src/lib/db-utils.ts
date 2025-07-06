@@ -38,14 +38,14 @@ export class DatabaseService {
 
   async getTransactionById(id: string) {
     const collection = await this.getTransactionsCollection();
-    const transaction = await collection.findOne({ _id: new ObjectId(id) } as any);
+    const transaction = await collection.findOne({ _id: new ObjectId(id) });
     return transaction ? { ...transaction, _id: transaction._id.toString() } : null;
   }
 
   async updateTransaction(id: string, updates: Partial<Transaction>) {
     const collection = await this.getTransactionsCollection();
     const result = await collection.updateOne(
-      { _id: new ObjectId(id) } as any,
+      { _id: new ObjectId(id) },
       { $set: { ...updates, updatedAt: new Date() } }
     );
     return result.modifiedCount > 0;
@@ -53,7 +53,7 @@ export class DatabaseService {
 
   async deleteTransaction(id: string) {
     const collection = await this.getTransactionsCollection();
-    const result = await collection.deleteOne({ _id: new ObjectId(id) } as any);
+    const result = await collection.deleteOne({ _id: new ObjectId(id) });
     return result.deletedCount > 0;
   }
 
@@ -187,89 +187,40 @@ export class DatabaseService {
 
   async getDashboardStats(): Promise<DashboardStats> {
     const collection = await this.getTransactionsCollection();
-
-    // Optimized single aggregation pipeline for better performance
-    const [statsResult] = await Promise.all([
+    
+    // Get current month for recent data
+    const now = new Date();
+    const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    
+    // Get totals
+    const [expenseResult, incomeResult] = await Promise.all([
       collection.aggregate([
-        {
-          $facet: {
-            // Get expense totals and top categories in one go
-            expenseStats: [
-              { $match: { type: 'expense' } },
-              {
-                $group: {
-                  _id: '$category',
-                  amount: { $sum: '$amount' },
-                  count: { $sum: 1 }
-                }
-              },
-              { $sort: { amount: -1 } },
-              { $limit: 5 }
-            ],
-            // Get income totals
-            incomeStats: [
-              { $match: { type: 'income' } },
-              {
-                $group: {
-                  _id: null,
-                  total: { $sum: '$amount' },
-                  count: { $sum: 1 }
-                }
-              }
-            ],
-            // Get total expense amount
-            totalExpenseStats: [
-              { $match: { type: 'expense' } },
-              {
-                $group: {
-                  _id: null,
-                  total: { $sum: '$amount' },
-                  count: { $sum: 1 }
-                }
-              }
-            ],
-            // Get recent transactions
-            recentTransactions: [
-              { $sort: { date: -1, createdAt: -1 } },
-              { $limit: 5 },
-              {
-                $project: {
-                  _id: { $toString: '$_id' },
-                  amount: 1,
-                  date: 1,
-                  description: 1,
-                  category: 1,
-                  type: 1,
-                  createdAt: 1,
-                  updatedAt: 1
-                }
-              }
-            ]
-          }
-        }
+        { $match: { type: 'expense' } },
+        { $group: { _id: null, total: { $sum: '$amount' }, count: { $sum: 1 } } }
+      ]).toArray(),
+      collection.aggregate([
+        { $match: { type: 'income' } },
+        { $group: { _id: null, total: { $sum: '$amount' }, count: { $sum: 1 } } }
       ]).toArray()
     ]);
 
-    const stats = statsResult[0];
-    const totalExpenses = stats?.totalExpenseStats[0]?.total || 0;
-    const totalIncome = stats?.incomeStats[0]?.total || 0;
-    const transactionCount = (stats?.totalExpenseStats[0]?.count || 0) + (stats?.incomeStats[0]?.count || 0);
+    const totalExpenses = expenseResult[0]?.total || 0;
+    const totalIncome = incomeResult[0]?.total || 0;
+    const transactionCount = (expenseResult[0]?.count || 0) + (incomeResult[0]?.count || 0);
 
-    // Process top categories with percentages
-    const topCategories = stats?.expenseStats?.map((item: any) => ({
-      category: item._id,
-      amount: item.amount,
-      count: item.count,
-      percentage: totalExpenses > 0 ? (item.amount / totalExpenses) * 100 : 0
-    })) || [];
+    // Get top categories and recent transactions
+    const [topCategories, recentTransactions] = await Promise.all([
+      this.getCategorySummary(),
+      this.getTransactions(5)
+    ]);
 
     return {
       totalExpenses,
       totalIncome,
       netAmount: totalIncome - totalExpenses,
       transactionCount,
-      topCategories,
-      recentTransactions: stats?.recentTransactions || []
+      topCategories: topCategories.slice(0, 5),
+      recentTransactions
     };
   }
 }

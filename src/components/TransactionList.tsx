@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Transaction, TRANSACTION_CATEGORIES } from '@/types';
 import { Trash2, Edit, Calendar, DollarSign } from 'lucide-react';
 import { toast } from 'sonner';
@@ -181,7 +181,7 @@ export function TransactionList({ refreshTrigger, onTransactionDeleted }: Transa
     <Card className="w-full">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-xl font-semibold text-gray-800">
-          {/* <DollarSign className="h-5 w-5" /> */}
+          <DollarSign className="h-5 w-5" />
           Recent Transactions
         </CardTitle>
       </CardHeader>

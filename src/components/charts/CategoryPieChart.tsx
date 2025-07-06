@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CategorySummary } from '@/types';
 
@@ -166,7 +166,7 @@ export function CategoryPieChart() {
                 <div
                   className="w-4 h-4 rounded-full shadow-md flex-shrink-0"
                   style={{
-                    background: `linear-gradient(135deg, ${GRADIENT_COLORS[index % GRADIENT_COLORS.length]?.start || '#3B82F6'}, ${GRADIENT_COLORS[index % GRADIENT_COLORS.length]?.end || '#1D4ED8'})`
+                    background: `linear-gradient(135deg, ${GRADIENT_COLORS[index % GRADIENT_COLORS.length].start}, ${GRADIENT_COLORS[index % GRADIENT_COLORS.length].end})`
                   }}
                 ></div>
                 <div className="flex-1 min-w-0">

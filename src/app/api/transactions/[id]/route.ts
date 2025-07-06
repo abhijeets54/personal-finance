@@ -3,11 +3,10 @@ import { dbService } from '@/lib/db-utils';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   try {
-    const { id } = await params;
-    const transaction = await dbService.getTransactionById(id);
+    const transaction = await dbService.getTransactionById(params.id);
     
     if (!transaction) {
       return NextResponse.json(
@@ -28,16 +27,15 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   try {
-    const { id } = await params;
     const body = await request.json();
     const { amount, date, description, category, type } = body;
 
     // Validate fields if provided
-    const updates: Record<string, unknown> = {};
-
+    const updates: any = {};
+    
     if (amount !== undefined) {
       if (typeof amount !== 'number' || amount <= 0) {
         return NextResponse.json(
@@ -51,7 +49,7 @@ export async function PUT(
     if (date !== undefined) updates.date = date;
     if (description !== undefined) updates.description = description.trim();
     if (category !== undefined) updates.category = category;
-
+    
     if (type !== undefined) {
       if (type !== 'income' && type !== 'expense') {
         return NextResponse.json(
@@ -62,7 +60,7 @@ export async function PUT(
       updates.type = type;
     }
 
-    const success = await dbService.updateTransaction(id, updates);
+    const success = await dbService.updateTransaction(params.id, updates);
     
     if (!success) {
       return NextResponse.json(
@@ -83,11 +81,10 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   try {
-    const { id } = await params;
-    const success = await dbService.deleteTransaction(id);
+    const success = await dbService.deleteTransaction(params.id);
     
     if (!success) {
       return NextResponse.json(

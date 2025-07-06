@@ -85,7 +85,7 @@ export function SpendingInsights() {
     // Category analysis
     if (categories.length > 0) {
       const topCategory = categories[0];
-      if (topCategory && topCategory.percentage > 40) {
+      if (topCategory.percentage > 40) {
         insights.push({
           type: 'warning',
           title: 'High Concentration in One Category',
@@ -110,8 +110,7 @@ export function SpendingInsights() {
     if (monthly.length >= 2) {
       const lastMonth = monthly[monthly.length - 1];
       const previousMonth = monthly[monthly.length - 2];
-      if (lastMonth && previousMonth) {
-        const changePercent = ((lastMonth.amount - previousMonth.amount) / previousMonth.amount) * 100;
+      const changePercent = ((lastMonth.amount - previousMonth.amount) / previousMonth.amount) * 100;
 
       if (changePercent > 20) {
         insights.push({
@@ -127,7 +126,6 @@ export function SpendingInsights() {
           description: `Great! Your expenses decreased by ${Math.abs(changePercent).toFixed(1)}% compared to last month.`,
           icon: <TrendingDown className="h-5 w-5" />
         });
-      }
       }
     }
 

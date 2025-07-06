@@ -6,10 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "setup-deployment": "node scripts/setup-deployment.js",
-    "type-check": "tsc --noEmit",
-    "build:check": "npm run type-check && npm run lint && npm run build"
+    "lint": "next lint"
   },
   "dependencies": {
     "@radix-ui/react-alert-dialog": "^1.1.14",
