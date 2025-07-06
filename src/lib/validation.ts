@@ -67,7 +67,7 @@ export function validateTransaction(data: {
   // Category validation
   if (!data.category) {
     errors.push({ field: 'category', message: 'Category is required' });
-  } else if (!TRANSACTION_CATEGORIES.includes(data.category as any)) {
+  } else if (!(TRANSACTION_CATEGORIES as readonly string[]).includes(data.category)) {
     errors.push({ field: 'category', message: 'Invalid category selected' });
   }
 
@@ -95,7 +95,7 @@ export function validateBudget(data: {
   // Category validation
   if (!data.category) {
     errors.push({ field: 'category', message: 'Category is required' });
-  } else if (!TRANSACTION_CATEGORIES.includes(data.category as any)) {
+  } else if (!(TRANSACTION_CATEGORIES as readonly string[]).includes(data.category)) {
     errors.push({ field: 'category', message: 'Invalid category selected' });
   }
 
@@ -179,12 +179,21 @@ export function formatDateForInput(date: Date): string {
 }
 
 // API error handling
-export function handleApiError(error: any): string {
-  if (error.response?.data?.error) {
-    return error.response.data.error;
-  }
-  if (error.message) {
-    return error.message;
+export function handleApiError(error: unknown): string {
+  if (error && typeof error === 'object') {
+    const err = error as Record<string, unknown>;
+    if (err.response && typeof err.response === 'object') {
+      const response = err.response as Record<string, unknown>;
+      if (response.data && typeof response.data === 'object') {
+        const data = response.data as Record<string, unknown>;
+        if (typeof data.error === 'string') {
+          return data.error;
+        }
+      }
+    }
+    if (typeof err.message === 'string') {
+      return err.message;
+    }
   }
   return 'An unexpected error occurred';
 }

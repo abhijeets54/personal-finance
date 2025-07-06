@@ -2,15 +2,24 @@ import { getDatabase } from './mongodb';
 import { Transaction, Budget, CategorySummary, MonthlyExpense, BudgetComparison, DashboardStats } from '@/types';
 import { ObjectId } from 'mongodb';
 
+// MongoDB document types (with ObjectId)
+interface TransactionDocument extends Omit<Transaction, '_id'> {
+  _id?: ObjectId;
+}
+
+interface BudgetDocument extends Omit<Budget, '_id'> {
+  _id?: ObjectId;
+}
+
 export class DatabaseService {
   private async getTransactionsCollection() {
     const db = await getDatabase();
-    return db.collection<Transaction>('transactions');
+    return db.collection<TransactionDocument>('transactions');
   }
 
   private async getBudgetsCollection() {
     const db = await getDatabase();
-    return db.collection<Budget>('budgets');
+    return db.collection<BudgetDocument>('budgets');
   }
 
   // Transaction operations
@@ -44,9 +53,12 @@ export class DatabaseService {
 
   async updateTransaction(id: string, updates: Partial<Transaction>) {
     const collection = await this.getTransactionsCollection();
+    // Create update object without _id
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { _id, ...updateFields } = updates;
     const result = await collection.updateOne(
       { _id: new ObjectId(id) },
-      { $set: { ...updates, updatedAt: new Date() } }
+      { $set: { ...updateFields, updatedAt: new Date() } as Partial<TransactionDocument> }
     );
     return result.modifiedCount > 0;
   }
@@ -93,7 +105,7 @@ export class DatabaseService {
   // Analytics operations
   async getCategorySummary(startDate?: string, endDate?: string): Promise<CategorySummary[]> {
     const collection = await this.getTransactionsCollection();
-    const matchStage: any = { type: 'expense' };
+    const matchStage: { type: string; date?: { $gte?: string; $lte?: string } } = { type: 'expense' };
     
     if (startDate || endDate) {
       matchStage.date = {};
@@ -188,10 +200,7 @@ export class DatabaseService {
   async getDashboardStats(): Promise<DashboardStats> {
     const collection = await this.getTransactionsCollection();
     
-    // Get current month for recent data
-    const now = new Date();
-    const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-    
+
     // Get totals
     const [expenseResult, incomeResult] = await Promise.all([
       collection.aggregate([

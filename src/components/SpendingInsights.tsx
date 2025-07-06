@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { DashboardStats, CategorySummary, MonthlyExpense } from '@/types';
@@ -17,11 +17,7 @@ export function SpendingInsights() {
   const [insights, setInsights] = useState<Insight[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    generateInsights();
-  }, []);
-
-  const generateInsights = async () => {
+  const generateInsights = useCallback(async () => {
     try {
       const [dashboardResponse, categoriesResponse, monthlyResponse] = await Promise.all([
         fetch('/api/analytics/dashboard'),
@@ -48,7 +44,11 @@ export function SpendingInsights() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    generateInsights();
+  }, [generateInsights]);
 
   const analyzeSpendingPatterns = (
     dashboard: DashboardStats,

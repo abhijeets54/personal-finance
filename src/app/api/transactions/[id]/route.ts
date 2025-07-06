@@ -3,10 +3,11 @@ import { dbService } from '@/lib/db-utils';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const transaction = await dbService.getTransactionById(params.id);
+    const { id } = await params;
+    const transaction = await dbService.getTransactionById(id);
     
     if (!transaction) {
       return NextResponse.json(
@@ -27,14 +28,21 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const body = await request.json();
     const { amount, date, description, category, type } = body;
 
     // Validate fields if provided
-    const updates: any = {};
+    const updates: Partial<{
+      amount: number;
+      date: string;
+      description: string;
+      category: string;
+      type: 'income' | 'expense';
+    }> = {};
     
     if (amount !== undefined) {
       if (typeof amount !== 'number' || amount <= 0) {
@@ -60,7 +68,7 @@ export async function PUT(
       updates.type = type;
     }
 
-    const success = await dbService.updateTransaction(params.id, updates);
+    const success = await dbService.updateTransaction(id, updates);
     
     if (!success) {
       return NextResponse.json(
@@ -81,10 +89,11 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const success = await dbService.deleteTransaction(params.id);
+    const { id } = await params;
+    const success = await dbService.deleteTransaction(id);
     
     if (!success) {
       return NextResponse.json(

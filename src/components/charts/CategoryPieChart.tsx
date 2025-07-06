@@ -1,15 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CategorySummary } from '@/types';
 
-const COLORS = [
-  '#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6',
-  '#06b6d4', '#84cc16', '#f97316', '#ec4899', '#6366f1',
-  '#14b8a6', '#f43f5e', '#8b5cf6', '#06b6d4', '#84cc16'
-];
+
 
 const GRADIENT_COLORS = [
   { start: '#3b82f6', end: '#1d4ed8' },
@@ -54,7 +50,12 @@ export function CategoryPieChart() {
     }).format(value);
   };
 
-  const CustomTooltip = ({ active, payload }: any) => {
+  const CustomTooltip = ({ active, payload }: {
+    active?: boolean;
+    payload?: Array<{
+      payload: CategorySummary;
+    }>;
+  }) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
       return (
@@ -69,7 +70,18 @@ export function CategoryPieChart() {
     return null;
   };
 
-  const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, category }: any) => {
+  const renderCustomLabel = (props: {
+    cx?: number;
+    cy?: number;
+    midAngle?: number;
+    innerRadius?: number;
+    outerRadius?: number;
+    percent?: number;
+    [key: string]: unknown;
+  }) => {
+    const { cx, cy, midAngle, innerRadius, outerRadius, percent } = props;
+
+    if (!cx || !cy || midAngle === undefined || !innerRadius || !outerRadius || percent === undefined) return null;
     const RADIAN = Math.PI / 180;
     const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
     const x = cx + radius * Math.cos(-midAngle * RADIAN);

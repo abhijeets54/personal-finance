@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -13,11 +13,7 @@ export function BudgetComparisonChart() {
     new Date().toISOString().slice(0, 7) // Current month
   );
 
-  useEffect(() => {
-    fetchBudgetComparison();
-  }, [selectedMonth]);
-
-  const fetchBudgetComparison = async () => {
+  const fetchBudgetComparison = useCallback(async () => {
     setIsLoading(true);
     try {
       const response = await fetch(`/api/analytics/budget-comparison?month=${selectedMonth}`);
@@ -31,7 +27,11 @@ export function BudgetComparisonChart() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [selectedMonth]);
+
+  useEffect(() => {
+    fetchBudgetComparison();
+  }, [fetchBudgetComparison]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-IN', {
@@ -40,10 +40,18 @@ export function BudgetComparisonChart() {
     }).format(value);
   };
 
-  const CustomTooltip = ({ active, payload, label }: any) => {
+  const CustomTooltip = ({ active, payload, label }: {
+    active?: boolean;
+    payload?: Array<{
+      dataKey: string;
+      value: number;
+      color: string;
+    }>;
+    label?: string;
+  }) => {
     if (active && payload && payload.length) {
-      const budgeted = payload.find((p: any) => p.dataKey === 'budgeted')?.value || 0;
-      const actual = payload.find((p: any) => p.dataKey === 'actual')?.value || 0;
+      const budgeted = payload.find((p) => p.dataKey === 'budgeted')?.value || 0;
+      const actual = payload.find((p) => p.dataKey === 'actual')?.value || 0;
       const remaining = budgeted - actual;
       const percentage = budgeted > 0 ? ((actual / budgeted) * 100) : 0;
 
